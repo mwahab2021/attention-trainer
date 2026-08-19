@@ -5,7 +5,8 @@ A private, local-first attention-training experiment: 30 sessions over six weeks
 ## What is included
 
 - Five sessions per week: 20 minutes in Weeks 1–2, 25 minutes in Weeks 3–4, and 30 minutes in Weeks 5–6.
-- A 20-second initial interval. Each successful check increases the next interval by 10%; each failed check decreases it by 20% (bounded to 5–300 seconds).
+- Breath-focused trials completed with headphones on and eyes closed, following the core MediTrain protocol.
+- A 20-second initial interval. Each trial with uninterrupted attention to the breath increases the next interval by 10%; any mind-wandering decreases it by 20%.
 - Reading-transfer tests at Baseline, Week 2, Week 4, and Week 6.
 - Local-first saves in the browser. Training continues offline; changes queue and sync after sign-in when connectivity returns.
 - Private cross-device sync using Supabase magic-link authentication and Row Level Security (RLS).

@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#14231c">
   <title>Attention Trainer</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="protocol.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="supabase-config.js" defer></script>
   <script src="app.js" defer></script>
@@ -36,13 +37,25 @@
         </div>
       </div>
 
+      <aside class="protocol-blurb" aria-labelledby="protocol-title">
+        <div>
+          <p class="eyebrow">How it works</p>
+          <h2 id="protocol-title">Practice noticing—and returning.</h2>
+        </div>
+        <div class="protocol-copy">
+          <p>Put on headphones, settle somewhere quiet, close your eyes, and attend to the sensations of breathing. A <strong>trial</strong> is the quiet stretch between chimes. At each chime, report whether your attention stayed with your breath for the entire trial; drifting is expected, and noticing it is part of the practice.</p>
+          <p>The timing adapts to you: a focused trial makes the next one 10% longer, while a drift makes it 20% shorter. Over six weeks, the exercise gradually challenges you to sustain attention for longer periods.</p>
+          <p class="research-note">This training follows the core closed-loop MediTrain protocol studied by Ziegler et al. (2019); the reading checks are an added self-experiment measure. <a href="https://doi.org/10.1038/s41562-019-0611-9" target="_blank" rel="noopener noreferrer">Read the original paper<span class="visually-hidden"> (opens in a new tab)</span> →</a></p>
+        </div>
+      </aside>
+
       <div class="grid dashboard-grid">
         <article class="card next-card">
           <div class="card-heading">
             <div><p class="eyebrow">Next session</p><h2 id="next-session-title">Session 1 · 20 minutes</h2></div>
             <span id="next-session-week" class="pill">Week 1</span>
           </div>
-          <p>Focus on the dot. When the tone sounds, answer whether your attention was still with it.</p>
+          <p>With eyes closed, attend to the sensations of your breath. At each chime, report whether your attention stayed with your breathing for the entire trial.</p>
           <div class="metric-row">
             <div><span>Starting interval</span><strong id="next-interval">20s</strong></div>
             <div><span>Schedule</span><strong id="schedule-label">5 days/week</strong></div>
@@ -90,15 +103,16 @@
     <div id="training-setup" class="dialog-panel">
       <button class="dialog-close" data-close="training-dialog" aria-label="Close">×</button>
       <p class="eyebrow">Session <span id="training-session-number">1</span></p><h2>Settle your attention</h2>
-      <p>Keep the dot in gentle focus. At each tone, choose honestly. The next interval grows 10% after “yes” and shrinks 20% after “no.”</p>
+      <p>Find a quiet place and put on headphones. After you begin, close your eyes and attend to the sensations of your breath. If a distracting thought arises, acknowledge it, disengage from it, and return to your breathing.</p>
+      <p class="trial-rule"><strong>Report strictly:</strong> choose “No” if your attention was diverted even once. The next trial grows 10% after “Yes” and shrinks 20% after “No.”</p>
       <div class="session-duration"><span>Planned practice</span><strong id="training-duration">20 minutes</strong></div>
       <button id="begin-training" class="primary">Begin</button>
     </div>
     <div id="training-active" class="dialog-panel hidden">
       <div class="training-top"><span id="training-time">20:00</span><span id="training-trial-count">Trial 1</span></div>
-      <div class="focus-field"><div class="focus-dot"></div></div>
-      <p id="training-instruction">Rest your attention on the dot.</p>
-      <div id="trial-response" class="trial-response hidden"><h2>Was your attention still with the dot?</h2><div class="response-buttons"><button data-success="false" class="response no">No, I drifted</button><button data-success="true" class="response yes">Yes, it was</button></div></div>
+      <div class="focus-field"><div class="breath-cue" aria-hidden="true"><span>eyes closed</span><strong>Attend to your breath</strong></div></div>
+      <p id="training-instruction">Close your eyes and feel the sensations of breathing.</p>
+      <div id="trial-response" class="trial-response hidden"><h2>Did your attention remain on your breath for the entire trial?</h2><p>Choose “No” if it was diverted even once.</p><div class="response-buttons"><button data-success="false" class="response no">No, it wandered</button><button data-success="true" class="response yes">Yes, throughout</button></div></div>
       <button id="finish-early" class="text-button">Finish early</button>
     </div>
     <div id="training-complete" class="dialog-panel hidden"><p class="eyebrow">Session complete</p><h2>That return was the practice.</h2><div id="session-results" class="results-grid"></div><button class="primary" data-close="training-dialog">Save and close</button></div>

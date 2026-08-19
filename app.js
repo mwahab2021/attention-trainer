@@ -191,27 +191,32 @@
 
   function beginTraining() {
     const n = plannedSessionNumber();
-    training = { id: uid(), session_number: n, planned_minutes: SCHEDULE[n - 1], started_at: nowIso(), startMs: Date.now(), durationMs: SCHEDULE[n - 1] * 60000, interval: startingInterval(), starting_interval: startingInterval(), trials: [], awaiting: false, nextPromptAt: Date.now() + startingInterval() * 1000 };
+    training = { id: uid(), session_number: n, planned_minutes: SCHEDULE[n - 1], started_at: nowIso(), startMs: Date.now(), durationMs: SCHEDULE[n - 1] * 60000, pausedMs: 0, promptStartedAt: null, interval: startingInterval(), starting_interval: startingInterval(), trials: [], awaiting: false, nextPromptAt: Date.now() + startingInterval() * 1000 };
     $("#training-setup").classList.add("hidden"); $("#training-active").classList.remove("hidden");
     timerId = setInterval(tickTraining, 250); tickTraining();
   }
 
   function tickTraining() {
     if (!training) return;
-    const elapsed = Date.now() - training.startMs, remaining = Math.max(0, training.durationMs - elapsed);
+    const now = Date.now();
+    const currentPause = training.awaiting ? now - training.promptStartedAt : 0;
+    const elapsed = now - training.startMs - training.pausedMs - currentPause;
+    const remaining = Math.max(0, training.durationMs - elapsed);
     const mins = Math.floor(remaining / 60000), secs = Math.floor((remaining % 60000) / 1000);
     $("#training-time").textContent = `${mins}:${String(secs).padStart(2, "0")}`;
     $("#training-trial-count").textContent = `Trial ${training.trials.length + 1}`;
     if (remaining <= 0) return finishTraining();
     if (!training.awaiting && Date.now() >= training.nextPromptAt) {
-      training.awaiting = true; playTone(); $("#trial-response").classList.remove("hidden"); $("#training-instruction").classList.add("hidden");
+      training.awaiting = true; training.promptStartedAt = now; playTone(); $("#trial-response").classList.remove("hidden"); $("#training-instruction").classList.add("hidden");
     }
   }
 
   function recordTrial(success) {
     if (!training?.awaiting) return;
+    training.pausedMs += Date.now() - training.promptStartedAt;
+    training.promptStartedAt = null;
     training.trials.push({ at: nowIso(), interval_seconds: Number(training.interval.toFixed(2)), success });
-    training.interval = Math.max(5, Math.min(300, training.interval * (success ? 1.1 : .8)));
+    training.interval = training.interval * (success ? 1.1 : .8);
     training.awaiting = false; training.nextPromptAt = Date.now() + training.interval * 1000;
     $("#trial-response").classList.add("hidden"); $("#training-instruction").classList.remove("hidden");
   }
@@ -219,7 +224,9 @@
   function finishTraining() {
     if (!training) return;
     clearInterval(timerId); timerId = null;
-    const completed = nowIso(), actual = Math.max(1, Math.round((Date.now() - training.startMs) / 1000));
+    const completed = nowIso();
+    const currentPause = training.awaiting ? Date.now() - training.promptStartedAt : 0;
+    const actual = Math.max(1, Math.round((Date.now() - training.startMs - training.pausedMs - currentPause) / 1000));
     const intervals = training.trials.map((x) => x.interval_seconds);
     const successes = training.trials.filter((x) => x.success).length;
     const row = { id: training.id, session_number: training.session_number, started_at: training.started_at, completed_at: completed, planned_minutes: training.planned_minutes, actual_seconds: actual, starting_interval: training.starting_interval, ending_interval: Number(training.interval.toFixed(2)), median_interval: Number((median(intervals) || training.starting_interval).toFixed(2)), success_rate: training.trials.length ? Number((successes / training.trials.length).toFixed(4)) : 0, trials: training.trials, client_updated_at: completed };
