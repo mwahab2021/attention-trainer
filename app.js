@@ -19,7 +19,7 @@
 
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
-  const clone = (value) => JSON.parse(JSON.stringify(value));
+  function clone(value) { return JSON.parse(JSON.stringify(value)); }
   const nowIso = () => new Date().toISOString();
   const uid = () => crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const configured = () => {
