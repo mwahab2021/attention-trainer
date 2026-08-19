@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14231c">
+  <title>Attention Trainer</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="supabase-config.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#today" aria-label="Attention Trainer home">
+      <span class="brand-mark">A</span><span>Attention Trainer</span>
+    </a>
+    <nav aria-label="Primary">
+      <button class="nav-link active" data-view="today">Today</button>
+      <button class="nav-link" data-view="progress">Progress</button>
+      <button class="nav-link" data-view="data">Data</button>
+    </nav>
+    <button id="account-button" class="account-button">Local mode</button>
+  </header>
+
+  <main>
+    <section id="today-view" class="view active">
+      <div class="hero">
+        <div>
+          <p class="eyebrow">Six-week attention practice</p>
+          <h1>Train the return, not perfection.</h1>
+          <p class="lede">Notice when attention drifts, gently return, and let the staircase meet you where you are.</p>
+        </div>
+        <div class="week-ring" aria-label="Program progress">
+          <strong id="hero-session-count">0</strong><span>of 30<br>sessions</span>
+        </div>
+      </div>
+
+      <div class="grid dashboard-grid">
+        <article class="card next-card">
+          <div class="card-heading">
+            <div><p class="eyebrow">Next session</p><h2 id="next-session-title">Session 1 · 20 minutes</h2></div>
+            <span id="next-session-week" class="pill">Week 1</span>
+          </div>
+          <p>Focus on the dot. When the tone sounds, answer whether your attention was still with it.</p>
+          <div class="metric-row">
+            <div><span>Starting interval</span><strong id="next-interval">20s</strong></div>
+            <div><span>Schedule</span><strong id="schedule-label">5 days/week</strong></div>
+          </div>
+          <button id="start-session" class="primary">Start training</button>
+        </article>
+
+        <article class="card">
+          <div class="card-heading"><div><p class="eyebrow">Reading transfer</p><h2 id="reading-title">Baseline test</h2></div><span id="reading-status" class="pill muted">Due now</span></div>
+          <p id="reading-copy">Complete a reading check before your first training session.</p>
+          <button id="open-reading" class="secondary">Record reading test</button>
+        </article>
+      </div>
+
+      <article class="card schedule-card">
+        <div class="card-heading"><div><p class="eyebrow">Program map</p><h2>30 sessions across 6 weeks</h2></div></div>
+        <div id="program-map" class="program-map"></div>
+      </article>
+    </section>
+
+    <section id="progress-view" class="view">
+      <div class="section-heading"><div><p class="eyebrow">Your trajectory</p><h1>Progress</h1></div><p id="sync-summary" class="sync-summary">Saved on this device</p></div>
+      <div class="stats-grid">
+        <article class="stat"><span>Sessions</span><strong id="stat-sessions">0/30</strong></article>
+        <article class="stat"><span>Median interval</span><strong id="stat-interval">—</strong></article>
+        <article class="stat"><span>Success rate</span><strong id="stat-success">—</strong></article>
+        <article class="stat"><span>Minutes trained</span><strong id="stat-minutes">0</strong></article>
+      </div>
+      <article class="card chart-card"><div class="card-heading"><div><p class="eyebrow">Adaptive staircase</p><h2>Attention interval by session</h2></div></div><div id="interval-chart" class="chart"></div></article>
+      <article class="card chart-card"><div class="card-heading"><div><p class="eyebrow">Transfer</p><h2>Reading mind-wandering and comprehension</h2></div></div><div id="reading-chart" class="chart"></div></article>
+      <article class="card"><div class="card-heading"><div><p class="eyebrow">History</p><h2>Completed sessions</h2></div></div><div id="history-list" class="history-list empty">No sessions yet.</div></article>
+    </section>
+
+    <section id="data-view" class="view">
+      <div class="section-heading"><div><p class="eyebrow">Portable by design</p><h1>Your data</h1></div></div>
+      <div class="grid data-grid">
+        <article class="card"><h2>Cloud sync</h2><p id="cloud-description">Add your Supabase project details to enable private cross-device sync. Local mode is fully functional.</p><button id="data-account-button" class="primary">Sign in / configure</button><button id="sync-now" class="secondary">Sync now</button></article>
+        <article class="card"><h2>Export</h2><p>Download a complete backup for analysis or transfer. CSV contains readable summaries; JSON preserves every trial.</p><div class="button-row"><button id="export-json" class="secondary">Export JSON</button><button id="export-csv" class="secondary">Export CSV</button></div></article>
+        <article class="card danger-zone"><h2>Local data</h2><p>Import a prior JSON backup, or erase this browser's copy. Cloud data is not erased here.</p><div class="button-row"><label class="file-button">Import JSON<input id="import-json" type="file" accept="application/json,.json"></label><button id="clear-local" class="text-danger">Erase local data</button></div></article>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="training-dialog" class="training-dialog">
+    <div id="training-setup" class="dialog-panel">
+      <button class="dialog-close" data-close="training-dialog" aria-label="Close">×</button>
+      <p class="eyebrow">Session <span id="training-session-number">1</span></p><h2>Settle your attention</h2>
+      <p>Keep the dot in gentle focus. At each tone, choose honestly. The next interval grows 10% after “yes” and shrinks 20% after “no.”</p>
+      <div class="session-duration"><span>Planned practice</span><strong id="training-duration">20 minutes</strong></div>
+      <button id="begin-training" class="primary">Begin</button>
+    </div>
+    <div id="training-active" class="dialog-panel hidden">
+      <div class="training-top"><span id="training-time">20:00</span><span id="training-trial-count">Trial 1</span></div>
+      <div class="focus-field"><div class="focus-dot"></div></div>
+      <p id="training-instruction">Rest your attention on the dot.</p>
+      <div id="trial-response" class="trial-response hidden"><h2>Was your attention still with the dot?</h2><div class="response-buttons"><button data-success="false" class="response no">No, I drifted</button><button data-success="true" class="response yes">Yes, it was</button></div></div>
+      <button id="finish-early" class="text-button">Finish early</button>
+    </div>
+    <div id="training-complete" class="dialog-panel hidden"><p class="eyebrow">Session complete</p><h2>That return was the practice.</h2><div id="session-results" class="results-grid"></div><button class="primary" data-close="training-dialog">Save and close</button></div>
+  </dialog>
+
+  <dialog id="reading-dialog">
+    <form id="reading-form" class="dialog-panel">
+      <button type="button" class="dialog-close" data-close="reading-dialog" aria-label="Close">×</button>
+      <p class="eyebrow">Reading transfer</p><h2 id="reading-form-title">Baseline test</h2>
+      <p>Read naturally for a timed period. Each time you notice mind-wandering, make a tally, then enter the total and a brief comprehension check.</p>
+      <label>Minutes read<input name="durationMinutes" type="number" min="1" max="180" value="20" required></label>
+      <label>Mind-wandering episodes<input name="mindWanders" type="number" min="0" max="999" required></label>
+      <label>Comprehension (0–100%)<input name="comprehension" type="number" min="0" max="100" required></label>
+      <label>Material / title<input name="material" type="text" maxlength="200" placeholder="Optional"></label>
+      <label>Difficulty<select name="difficulty"><option value="easy">Easy</option><option value="moderate" selected>Moderate</option><option value="hard">Hard</option></select></label>
+      <button class="primary" type="submit">Save reading test</button>
+    </form>
+  </dialog>
+
+  <dialog id="account-dialog">
+    <div class="dialog-panel">
+      <button class="dialog-close" data-close="account-dialog" aria-label="Close">×</button>
+      <p class="eyebrow">Private sync</p><h2 id="account-title">Sign in across devices</h2>
+      <div id="config-warning" class="notice hidden">Supabase is not configured yet. Follow the README, then fill in <code>supabase-config.js</code>.</div>
+      <div id="signed-out-panel"><p>Enter your email and we’ll send a secure sign-in link. No password needed.</p><form id="login-form"><label>Email<input name="email" type="email" autocomplete="email" required></label><button class="primary" type="submit">Email me a sign-in link</button></form></div>
+      <div id="signed-in-panel" class="hidden"><p>Signed in as <strong id="account-email"></strong>. Pending local changes sync automatically when online.</p><button id="account-sync" class="primary">Sync now</button><button id="sign-out" class="secondary">Sign out</button></div>
+      <p id="account-message" class="form-message" aria-live="polite"></p>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
