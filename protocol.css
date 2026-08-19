@@ -36,6 +36,13 @@
   background: #edf2e9;
 }
 
+.auth-hint {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .breath-cue {
   display: flex;
   flex-direction: column;

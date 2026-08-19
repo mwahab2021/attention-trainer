@@ -307,7 +307,7 @@
     const { email, password } = credentials(); $("#account-message").textContent = "Creating account…";
     const redirectTo = `${location.origin}${location.pathname}`;
     const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo } });
-    $("#account-message").textContent = error ? error.message : data.session ? "Account created and signed in." : "Account created. Check your email once to confirm it, then sign in with your password.";
+    $("#account-message").textContent = error ? error.message : data.session ? "Account created and signed in." : "If this is a new email, check it once to confirm your account. If you used this email with a magic link before, choose “Forgot or set password” instead.";
   }
 
   async function requestPasswordReset() {
