@@ -17,6 +17,7 @@
   let timerId = null;
   let toneContext = null;
   let recoveringPassword = false;
+  let syncInProgress = false;
 
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -161,7 +162,10 @@
     $("#signed-in-panel").classList.toggle("hidden", !currentUser || recoveringPassword);
     $("#account-email").textContent = currentUser?.email || "";
     $("#cloud-description").textContent = currentUser ? `Signed in as ${currentUser.email}. Local changes sync automatically.` : isConfigured ? "Sign in with your email and password to sync privately across devices." : "Add your Supabase project details to enable private cross-device sync. Local mode is fully functional.";
-    $("#sync-now").disabled = !currentUser;
+    [$("#sync-now"), $("#account-sync")].forEach((button) => {
+      button.disabled = !currentUser || syncInProgress;
+      button.textContent = syncInProgress ? "Syncing…" : "Sync now";
+    });
   }
 
   function switchView(name) {
@@ -337,7 +341,10 @@
   function cloudToLocal(row) { const { user_id, created_at, ...local } = row; return local; }
 
   async function syncAll() {
-    if (!supabase || !currentUser || !navigator.onLine) { renderAccount(); return; }
+    if (!supabase || !currentUser) { renderAccount(); return; }
+    if (!navigator.onLine) { $("#account-message").textContent = "You are offline. Sync will resume automatically when you reconnect."; renderAccount(); return; }
+    if (syncInProgress) return;
+    syncInProgress = true; $("#account-message").textContent = "Syncing…"; renderAccount();
     try {
       const [sessionResult, readingResult] = await Promise.all([
         supabase.from("training_sessions").select("*"),
@@ -351,7 +358,12 @@
       if (sessionRows.length) { const { error } = await supabase.from("training_sessions").upsert(sessionRows, { onConflict: "user_id,session_number" }); if (error) throw error; }
       if (readingRows.length) { const { error } = await supabase.from("reading_tests").upsert(readingRows, { onConflict: "user_id,checkpoint" }); if (error) throw error; }
       state.pending = []; state.lastSyncAt = nowIso(); saveState();
-    } catch (error) { console.error("Sync failed", error); renderAccount(); toast(`Sync paused: ${error.message || "try again later"}`); }
+      $("#account-message").textContent = "Synced successfully.";
+    } catch (error) {
+      console.error("Sync failed", error);
+      $("#account-message").textContent = `Sync failed: ${error.message || "try again later"}`;
+      toast(`Sync paused: ${error.message || "try again later"}`);
+    } finally { syncInProgress = false; renderAccount(); }
   }
 
   function mergeCloud(cloud, key, unique) {
