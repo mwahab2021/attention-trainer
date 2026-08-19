@@ -9,14 +9,14 @@ A private, local-first attention-training experiment: 30 sessions over six weeks
 - A 20-second initial interval. Each trial with uninterrupted attention to the breath increases the next interval by 10%; any mind-wandering decreases it by 20%.
 - Reading-transfer tests at Baseline, Week 2, Week 4, and Week 6.
 - Local-first saves in the browser. Training continues offline; changes queue and sync after sign-in when connectivity returns.
-- Private cross-device sync using Supabase magic-link authentication and Row Level Security (RLS).
+- Private cross-device sync using Supabase email/password authentication and Row Level Security (RLS).
 - JSON backup/import, CSV summaries, responsive progress charts, and no build step.
 
 > This is a self-experiment tool, not medical care or a diagnostic instrument. Export backups periodically. Browser storage can be cleared by the browser or device.
 
 ## 1. Run locally
 
-Because browser authentication callbacks work best over HTTP, serve the folder instead of double-clicking `index.html`.
+Because authentication callbacks work best over HTTP, serve the folder instead of double-clicking `index.html`.
 
 If Python is installed:
 
@@ -45,7 +45,7 @@ window.ATTENTION_TRAINER_CONFIG = {
 
 Never put a `service_role` or secret key in this file. GitHub Pages is public, so every deployed file is visible. The anon/publishable key is designed for browser use; RLS is what keeps rows private.
 
-## 3. Configure email magic links
+## 3. Configure email and password sign-in
 
 In Supabase Dashboard:
 
@@ -54,16 +54,16 @@ In Supabase Dashboard:
 3. Add redirect URLs for every address you use:
    - `http://localhost:8080/**`
    - `https://YOUR_GITHUB_USERNAME.github.io/Focus-Project/**`
-4. Open **Authentication → Providers → Email** and leave Email enabled. Enable magic-link/OTP sign-in and choose whether email confirmation is required.
+4. Open **Authentication → Providers → Email**, leave Email enabled, and keep **Confirm email** enabled. New users confirm their address once, then sign in normally with their email and password.
 5. For reliable production delivery, configure custom SMTP under **Project Settings → Authentication → SMTP**. Supabase's default mail service is intended for testing and is rate-limited.
 
-Sign-in links return to the exact page that requested them. The app detects the session, merges cloud rows with local records by ID and most recent `client_updated_at`, then uploads any remaining local changes.
+Confirmation and password-recovery links return to the exact page that requested them. After sign-in, the app merges cloud rows with local records by ID and most recent `client_updated_at`, then uploads any remaining local changes.
 
 ## 4. Test before deploying
 
 1. Open the local site, record a short session (you can use **Finish early**) and a reading test.
 2. Export JSON and confirm a backup downloads.
-3. Sign in by magic link. The account button should show **Synced** after the merge.
+3. Create an account, confirm it once by email, then sign in with the password. The account button should show **Signed in** after the merge.
 4. Open the site in a private window or second browser, sign into the same email, and confirm the records appear.
 5. In the first browser, go offline, save another test/session, then reconnect and select **Sync now**. Confirm it appears in the second browser after syncing there.
 

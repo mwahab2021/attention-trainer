@@ -137,7 +137,23 @@
       <button class="dialog-close" data-close="account-dialog" aria-label="Close">×</button>
       <p class="eyebrow">Private sync</p><h2 id="account-title">Sign in across devices</h2>
       <div id="config-warning" class="notice hidden">Supabase is not configured yet. Follow the README, then fill in <code>supabase-config.js</code>.</div>
-      <div id="signed-out-panel"><p>Enter your email and we’ll send a secure sign-in link. No password needed.</p><form id="login-form"><label>Email<input name="email" type="email" autocomplete="email" required></label><button class="primary" type="submit">Email me a sign-in link</button></form></div>
+      <div id="signed-out-panel">
+        <p>Sign in with your password on any device. New accounts confirm their email once before the first sign-in.</p>
+        <form id="login-form">
+          <label>Email<input name="email" type="email" autocomplete="email" required></label>
+          <label>Password<input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+          <button class="primary" type="submit">Sign in</button>
+          <button id="create-account" class="secondary" type="button">Create account</button>
+          <button id="forgot-password" class="text-button" type="button">Forgot or set password</button>
+        </form>
+      </div>
+      <div id="password-update-panel" class="hidden">
+        <p>Choose a password for your account.</p>
+        <form id="password-update-form">
+          <label>New password<input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
+          <button class="primary" type="submit">Save password</button>
+        </form>
+      </div>
       <div id="signed-in-panel" class="hidden"><p>Signed in as <strong id="account-email"></strong>. Pending local changes sync automatically when online.</p><button id="account-sync" class="primary">Sync now</button><button id="sign-out" class="secondary">Sign out</button></div>
       <p id="account-message" class="form-message" aria-live="polite"></p>
     </div>

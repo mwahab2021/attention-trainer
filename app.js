@@ -16,6 +16,7 @@
   let training = null;
   let timerId = null;
   let toneContext = null;
+  let recoveringPassword = false;
 
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -152,13 +153,14 @@
 
   function renderAccount() {
     const isConfigured = configured();
-    $("#account-button").textContent = currentUser ? (state.pending.length ? `${state.pending.length} pending` : "Synced") : "Local mode";
+    $("#account-button").textContent = currentUser ? (state.pending.length ? `${state.pending.length} pending` : "Signed in") : "Local mode";
     $("#sync-summary").textContent = currentUser ? (state.pending.length ? `${state.pending.length} change(s) waiting to sync` : `Synced${state.lastSyncAt ? ` ${formatDate(state.lastSyncAt)}` : ""}`) : "Saved on this device";
     $("#config-warning").classList.toggle("hidden", isConfigured);
-    $("#signed-out-panel").classList.toggle("hidden", !!currentUser || !isConfigured);
-    $("#signed-in-panel").classList.toggle("hidden", !currentUser);
+    $("#signed-out-panel").classList.toggle("hidden", !!currentUser || !isConfigured || recoveringPassword);
+    $("#password-update-panel").classList.toggle("hidden", !recoveringPassword);
+    $("#signed-in-panel").classList.toggle("hidden", !currentUser || recoveringPassword);
     $("#account-email").textContent = currentUser?.email || "";
-    $("#cloud-description").textContent = currentUser ? `Signed in as ${currentUser.email}. Local changes sync automatically.` : isConfigured ? "Sign in with an email magic link to sync privately across devices." : "Add your Supabase project details to enable private cross-device sync. Local mode is fully functional.";
+    $("#cloud-description").textContent = currentUser ? `Signed in as ${currentUser.email}. Local changes sync automatically.` : isConfigured ? "Sign in with your email and password to sync privately across devices." : "Add your Supabase project details to enable private cross-device sync. Local mode is fully functional.";
     $("#sync-now").disabled = !currentUser;
   }
 
@@ -276,18 +278,56 @@
   async function initSupabase() {
     if (!configured() || !window.supabase?.createClient) { renderAccount(); return; }
     const c = window.ATTENTION_TRAINER_CONFIG;
-    supabase = window.supabase.createClient(c.supabaseUrl, c.supabaseAnonKey, { auth: { persistSession: true, detectSessionInUrl: true, flowType: "pkce" } });
+    supabase = window.supabase.createClient(c.supabaseUrl, c.supabaseAnonKey, { auth: { persistSession: true, detectSessionInUrl: true, flowType: "implicit" } });
+    supabase.auth.onAuthStateChange((event, session) => {
+      currentUser = session?.user || null;
+      recoveringPassword = event === "PASSWORD_RECOVERY";
+      renderAccount();
+      if (recoveringPassword) $("#account-dialog").showModal();
+      if (currentUser && !recoveringPassword) setTimeout(syncAll, 0);
+    });
     const { data } = await supabase.auth.getSession(); currentUser = data.session?.user || null; renderAccount();
-    supabase.auth.onAuthStateChange((_event, session) => { currentUser = session?.user || null; renderAccount(); if (currentUser) setTimeout(syncAll, 0); });
     if (currentUser) syncAll();
+  }
+
+  function credentials() {
+    const form = new FormData($("#login-form"));
+    return { email: String(form.get("email") || "").trim(), password: String(form.get("password") || "") };
   }
 
   async function login(event) {
     event.preventDefault(); if (!supabase) return;
-    const email = new FormData(event.currentTarget).get("email"); $("#account-message").textContent = "Sending…";
+    const { email, password } = credentials(); $("#account-message").textContent = "Signing in…";
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    $("#account-message").textContent = error ? error.message : "Signed in.";
+  }
+
+  async function createAccount() {
+    if (!supabase || !$("#login-form").reportValidity()) return;
+    const { email, password } = credentials(); $("#account-message").textContent = "Creating account…";
     const redirectTo = `${location.origin}${location.pathname}`;
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } });
-    $("#account-message").textContent = error ? error.message : "Check your email for the secure sign-in link.";
+    const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo } });
+    $("#account-message").textContent = error ? error.message : data.session ? "Account created and signed in." : "Account created. Check your email once to confirm it, then sign in with your password.";
+  }
+
+  async function requestPasswordReset() {
+    if (!supabase) return;
+    const emailInput = $("#login-form input[name='email']");
+    if (!emailInput.reportValidity()) return;
+    $("#account-message").textContent = "Sending password email…";
+    const redirectTo = `${location.origin}${location.pathname}`;
+    const { error } = await supabase.auth.resetPasswordForEmail(emailInput.value.trim(), { redirectTo });
+    $("#account-message").textContent = error ? error.message : "Check your email for the password setup link.";
+  }
+
+  async function updatePassword(event) {
+    event.preventDefault(); if (!supabase) return;
+    const password = String(new FormData(event.currentTarget).get("password") || "");
+    $("#account-message").textContent = "Saving password…";
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) { $("#account-message").textContent = error.message; return; }
+    recoveringPassword = false; renderAccount();
+    $("#account-message").textContent = "Password saved. You are signed in.";
   }
 
   function localToCloud(row, kind) {
@@ -327,12 +367,17 @@
     $$("[data-success]").forEach((x) => x.addEventListener("click", () => recordTrial(x.dataset.success === "true")));
     $("#open-reading").addEventListener("click", openReading); $("#reading-form").addEventListener("submit", saveReading);
     [$("#account-button"), $("#data-account-button")].forEach((x) => x.addEventListener("click", () => $("#account-dialog").showModal()));
-    $("#login-form").addEventListener("submit", login); $("#sign-out").addEventListener("click", async () => { await supabase?.auth.signOut(); currentUser = null; renderAccount(); });
+    $("#login-form").addEventListener("submit", login);
+    $("#create-account").addEventListener("click", createAccount);
+    $("#forgot-password").addEventListener("click", requestPasswordReset);
+    $("#password-update-form").addEventListener("submit", updatePassword);
+    $("#sign-out").addEventListener("click", async () => { await supabase?.auth.signOut(); currentUser = null; renderAccount(); });
     [$("#sync-now"), $("#account-sync")].forEach((x) => x.addEventListener("click", syncAll));
     $("#export-json").addEventListener("click", exportJson); $("#export-csv").addEventListener("click", exportCsv); $("#import-json").addEventListener("change", importJson);
     $("#clear-local").addEventListener("click", () => { if (!confirm("Erase all Attention Trainer data stored in this browser? Cloud records will remain.")) return; localStorage.removeItem(STORAGE_KEY); state = clone(DEFAULT_STATE); renderAll(); toast("Local data erased"); });
     window.addEventListener("online", syncAll);
   }
 
-  bindEvents(); switchView(["today","progress","data"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "today"); renderAll(); initSupabase();
+  const initialView = ["today","progress","data"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "today";
+  bindEvents(); renderAll(); initSupabase().finally(() => switchView(initialView));
 })();
